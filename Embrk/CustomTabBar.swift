@@ -1,11 +1,3 @@
-//
-//  CustomTabBar.swift
-//  Embrk
-//
-//  Created by Ty Mitchell on 9/7/24.
-//
-
-
 import SwiftUI
 
 struct CustomTabBar: View {

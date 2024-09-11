@@ -7,7 +7,7 @@ struct SideMenuView: View {
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var challengeManager: ChallengeManager
     @State private var showLoginView = false
-    @Binding var isLoggedIn: Bool
+    @EnvironmentObject var authManager: AuthManager
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -35,7 +35,7 @@ struct SideMenuView: View {
         .background(backgroundColor)
         .edgesIgnoringSafeArea(.all)
         .sheet(isPresented: $showLoginView) {
-            LoginView(isLoggedIn: $isLoggedIn)
+            LoginView()
         }
     }
     
@@ -44,45 +44,45 @@ struct SideMenuView: View {
     }
     
     private var authenticationButton: some View {
-            Group {
-                if challengeManager.isLoggedIn {
-                    Button(action: {
-                        challengeManager.logOut()
+        Group {
+            if authManager.isLoggedIn {
+                Button(action: {
+                    authManager.signOut { _ in
                         isShowing = false
-                    }) {
-                        HStack {
-                            Image(systemName: "arrow.left.square")
-                            Text("Logout")
-                        }
-                        .font(AppFonts.headline)
-                        .foregroundColor(.red)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.red.opacity(0.1))
-                        .cornerRadius(10)
                     }
-                } else {
-                    Button(action: {
-                        showLoginView = true
-                        isShowing = false
-                    }) {
-                        HStack {
-                            Image(systemName: "person.fill")
-                            Text("Login")
-                        }
-                        .font(AppFonts.headline)
-                        .foregroundColor(AppColors.primary)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(AppColors.primary.opacity(0.1))
-                        .cornerRadius(10)
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.left.square")
+                        Text("Logout")
                     }
+                    .font(AppFonts.headline)
+                    .foregroundColor(.red)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(10)
+                }
+            } else {
+                Button(action: {
+                    showLoginView = true
+                    isShowing = false
+                }) {
+                    HStack {
+                        Image(systemName: "person.fill")
+                        Text("Login")
+                    }
+                    .font(AppFonts.headline)
+                    .foregroundColor(AppColors.primary)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(AppColors.primary.opacity(0.1))
+                    .cornerRadius(10)
                 }
             }
-            .padding(.horizontal)
-            .padding(.bottom, 30)
         }
-
+        .padding(.horizontal)
+        .padding(.bottom, 30)
+    }
     
     private func onOptionTapped(_ option: SideMenuOptionModel) {
         selectedOption = option
@@ -94,7 +94,7 @@ struct SideMenuView: View {
 }
 
 struct SideMenuHeaderView: View {
-    @EnvironmentObject var challengeManager: ChallengeManager
+    @EnvironmentObject var authManager: AuthManager
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
@@ -105,11 +105,11 @@ struct SideMenuHeaderView: View {
                 .frame(width: 80, height: 80)
                 .foregroundColor(AppColors.primary)
             
-            Text(challengeManager.currentUser?.username ?? "Guest")
+            Text(authManager.currentUser?.username ?? "Guest")
                 .font(AppFonts.title2)
                 .foregroundColor(AppColors.text)
             
-            Text(challengeManager.currentUser?.email ?? "Not logged in")
+            Text(authManager.currentUser?.email ?? "Not logged in")
                 .font(AppFonts.caption)
                 .foregroundColor(AppColors.lightText)
         }
@@ -176,18 +176,3 @@ enum SideMenuOptionModel: Int, CaseIterable, Identifiable {
         }
     }
 }
-
-//struct SideMenuView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        Group {
-//            SideMenuView(isShowing: .constant(true), selectedTab: .constant(0), isLoggedIn: $isLoggedIn)
-//                .environmentObject(ChallengeManager())
-//                .previewDisplayName("Light Mode")
-//            
-//            SideMenuView(isShowing: .constant(true), selectedTab: .constant(0))
-//                .environmentObject(ChallengeManager())
-//                .preferredColorScheme(.dark)
-//                .previewDisplayName("Dark Mode")
-//        }
-//    }
-//}

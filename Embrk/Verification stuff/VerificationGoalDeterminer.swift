@@ -1,4 +1,3 @@
-
 import Foundation
 
 enum VerificationGoalDeterminer {
@@ -49,10 +48,8 @@ enum VerificationGoalDeterminer {
             if let calories = extractNumber(from: combinedText, using: caloriePatterns) {
                 return calories
             }
-        case .education, .miscellaneous:
+        case .education, .miscellaneous, .lifestyle:
             // For now, we're not setting automatic goals for these types
-            return nil
-        case .lifestyle:
             return nil
         }
         

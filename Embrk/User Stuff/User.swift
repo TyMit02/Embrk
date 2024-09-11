@@ -1,13 +1,10 @@
 import Foundation
-import Firebase
 import FirebaseFirestore
-import CryptoKit
 
 struct User: Identifiable, Codable {
     @DocumentID var id: String?
     let username: String
     let email: String
-    let hashedPassword : String
     var friends: [String]
     var pendingFriendRequests: [String]
     var sentFriendRequests: [String]
@@ -17,27 +14,19 @@ struct User: Identifiable, Codable {
     var blockedUsers: [String]
     var points: Int
 
-    init(username: String, email: String, hashedPassword: String, friends: [String] = [], createdChallenges: [String] = [], participatingChallenges: [String] = [], privacySettings: PrivacySettings = PrivacySettings(), pendingFriendRequests: [String] = [], sentFriendRequests: [String] = [], blockedUsers: [String] = [], points: Int = 0) {
-           self.username = username
-           self.email = email
-           self.hashedPassword = hashedPassword
-           self.friends = friends
-           self.createdChallenges = createdChallenges
-           self.participatingChallenges = participatingChallenges
-           self.privacySettings = privacySettings
-           self.pendingFriendRequests = pendingFriendRequests
-           self.sentFriendRequests = sentFriendRequests
-           self.blockedUsers = blockedUsers
-           self.points = points
-       }
-   }
-
-func hashPassword(_ password: String) -> String {
-    let inputData = Data(password.utf8)
-    let hashed = SHA256.hash(data: inputData)
-    return hashed.compactMap { String(format: "%02x", $0) }.joined()
+    init(username: String, email: String, friends: [String] = [], createdChallenges: [String] = [], participatingChallenges: [String] = [], privacySettings: PrivacySettings = PrivacySettings(), pendingFriendRequests: [String] = [], sentFriendRequests: [String] = [], blockedUsers: [String] = [], points: Int = 0) {
+        self.username = username
+        self.email = email
+        self.friends = friends
+        self.createdChallenges = createdChallenges
+        self.participatingChallenges = participatingChallenges
+        self.privacySettings = privacySettings
+        self.pendingFriendRequests = pendingFriendRequests
+        self.sentFriendRequests = sentFriendRequests
+        self.blockedUsers = blockedUsers
+        self.points = points
+    }
 }
-
 
 struct PrivacySettings: Codable {
     var showEmail: Bool = false

@@ -1,10 +1,8 @@
-
 import SwiftUI
 
 struct SignUpView: View {
-    @EnvironmentObject var challengeManager: ChallengeManager
+    @EnvironmentObject var authManager: AuthManager
     @Environment(\.presentationMode) var presentationMode
-    @Environment(\.colorScheme) var colorScheme
     @State private var username = ""
     @State private var email = ""
     @State private var password = ""
@@ -12,17 +10,16 @@ struct SignUpView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @Binding var isLoggedIn: Bool
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         NavigationView {
             ZStack {
                 backgroundColor.edgesIgnoringSafeArea(.all)
                 
-                VStack(spacing: AppSpacing.large) {
+                VStack(spacing: 20) {
                     logoSection
-                    
                     formSection
-                    
                     signUpButton
                 }
                 .padding()
@@ -47,17 +44,17 @@ struct SignUpView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 80, height: 80)
-                .foregroundColor(AppColors.primary)
+                .foregroundColor(.blue)
             
-            Text("Join Challenger")
-                .font(AppFonts.title2)
+            Text("Join Embrk")
+                .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(AppColors.primary)
+                .foregroundColor(.blue)
         }
     }
     
     private var formSection: some View {
-        VStack(spacing: AppSpacing.medium) {
+        VStack(spacing: 15) {
             TextField("Username", text: $username)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
@@ -73,37 +70,32 @@ struct SignUpView: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
         }
         .padding()
-        .background(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
+        .background(colorScheme == .dark ? Color(white: 0.1) : Color.white)
         .cornerRadius(15)
     }
     
     private var signUpButton: some View {
         Button(action: signUp) {
             Text("Sign Up")
-                .font(AppFonts.headline)
+                .font(.headline)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(AppColors.primary)
+                .background(Color.blue)
                 .cornerRadius(10)
         }
     }
     
     private func signUp() {
-           if password != confirmPassword {
-               errorMessage = "Passwords do not match"
-               showError = true
-               return
-           }
-           
-        let newUser = User(username: username, email: email, hashedPassword: hashPassword(password))
-           if challengeManager.createUser(newUser) {
-               challengeManager.login(user: newUser)
-               isLoggedIn = true
-               presentationMode.wrappedValue.dismiss()
-           } else {
-               errorMessage = "Username or email already exists"
-               showError = true
-           }
-       }
-}
+        if password != confirmPassword {
+            errorMessage = "Passwords do not match"
+            showError = true
+            return
+        }
+        
+        authManager.signUp(email: email, password: password, username: username) { result in
+            switch result {
+            case .success(let user):
+                isLoggedIn = true
+                presentationMode.wrappedValue.dismiss()
+            case
