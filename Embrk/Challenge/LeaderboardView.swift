@@ -1,3 +1,13 @@
+//
+//  LeaderboardView.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/9/24.
+//
+
+import Swift
+import SwiftUI
+
  struct LeaderboardView: View {
         @ObservedObject var leaderboardManager: LeaderboardManager
         let challengeId: String

@@ -1,3 +1,11 @@
+//
+//  AppDelegate.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/8/24.
+//
+
+
 import SwiftUI
 import FirebaseCore
 import FirebaseAuth

@@ -44,12 +44,12 @@ struct SignUpView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 80, height: 80)
-                .foregroundColor(.blue)
+                .foregroundColor(AppColors.primary)
             
             Text("Join Embrk")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(.blue)
+                .foregroundColor(AppColors.primary)
         }
     }
     
@@ -81,7 +81,7 @@ struct SignUpView: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.blue)
+                .background(AppColors.primary)
                 .cornerRadius(10)
         }
     }
@@ -98,4 +98,10 @@ struct SignUpView: View {
             case .success(let user):
                 isLoggedIn = true
                 presentationMode.wrappedValue.dismiss()
-            case
+            case .failure(let error):
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+}

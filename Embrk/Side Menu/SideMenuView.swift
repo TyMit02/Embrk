@@ -1,3 +1,11 @@
+//
+//  SideMenuView.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/9/24.
+//
+
+
 import SwiftUI
 
 struct SideMenuView: View {
@@ -35,7 +43,7 @@ struct SideMenuView: View {
         .background(backgroundColor)
         .edgesIgnoringSafeArea(.all)
         .sheet(isPresented: $showLoginView) {
-            LoginView()
+            LoginView(isLoggedIn: $authManager.isLoggedIn)
         }
     }
     
@@ -47,8 +55,14 @@ struct SideMenuView: View {
         Group {
             if authManager.isLoggedIn {
                 Button(action: {
-                    authManager.signOut { _ in
-                        isShowing = false
+                    authManager.signOut { result in
+                        switch result {
+                        case .success:
+                            isShowing = false
+                        case .failure(let error):
+                            print("Error signing out: \(error.localizedDescription)")
+                            // Handle the error appropriately
+                        }
                     }
                 }) {
                     HStack {
@@ -83,7 +97,7 @@ struct SideMenuView: View {
         .padding(.horizontal)
         .padding(.bottom, 30)
     }
-    
+
     private func onOptionTapped(_ option: SideMenuOptionModel) {
         selectedOption = option
         selectedTab = option.rawValue
@@ -150,7 +164,7 @@ struct SideMenuRowView: View {
 }
 
 enum SideMenuOptionModel: Int, CaseIterable, Identifiable {
-    case home, add, profile, search, friends, pro
+    case home, add, profile, search, friends, pro, admin
     
     var id: Int { self.rawValue }
     
@@ -162,6 +176,7 @@ enum SideMenuOptionModel: Int, CaseIterable, Identifiable {
         case .search: return "Search"
         case .friends: return "Friends"
         case .pro: return "Upgrade to Pro"
+        case .admin: return "Admin"
         }
     }
     
@@ -173,6 +188,7 @@ enum SideMenuOptionModel: Int, CaseIterable, Identifiable {
         case .search: return "magnifyingglass"
         case .friends: return "person.3"
         case .pro: return "star"
+        case .admin: return "trash"
         }
     }
 }

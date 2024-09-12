@@ -1,3 +1,11 @@
+//
+//  LoginView.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/8/24.
+//
+
+
 import SwiftUI
 
 struct LoginView: View {
@@ -43,12 +51,12 @@ struct LoginView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 100, height: 100)
-                .foregroundColor(.blue)
+                .foregroundColor(AppColors.primary)
             
             Text("Embrk")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-                .foregroundColor(.blue)
+                .foregroundColor(AppColors.primary)
         }
         .padding(.top, 50)
     }
@@ -75,7 +83,7 @@ struct LoginView: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.blue)
+                .background(AppColors.primary)
                 .cornerRadius(10)
         }
     }
@@ -84,19 +92,36 @@ struct LoginView: View {
         Button(action: { showSignUp = true }) {
             Text("Don't have an account? Sign Up")
                 .font(.subheadline)
-                .foregroundColor(.blue)
+                .foregroundColor(AppColors.primary)
         }
     }
     
     private func login() {
-        authManager.signIn(email: email, password: password) { result in
-            switch result {
-            case .success(let user):
-                isLoggedIn = true
-            case .failure(let error):
-                errorMessage = error.localizedDescription
-                showError = true
-            }
-        }
-    }
+           guard isValidForm() else { return }
+           
+           authManager.signIn(email: email, password: password) { result in
+               switch result {
+               case .success(let user):
+                   print("Successfully signed in: \(user.username)")
+               case .failure(let error):
+                   print("Sign in error: \(error.localizedDescription)")
+                   errorMessage = error.localizedDescription
+                   showError = true
+               }
+           }
+       }
+       
+       private func isValidForm() -> Bool {
+           if email.isEmpty || password.isEmpty {
+               errorMessage = "Please fill in all fields"
+               showError = true
+               return false
+           }
+           if !email.contains("@") {
+               errorMessage = "Please enter a valid email address"
+               showError = true
+               return false
+           }
+           return true
+       }
 }

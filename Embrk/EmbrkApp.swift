@@ -4,29 +4,35 @@
 //
 //  Created by Ty Mitchell on 9/7/24.
 //
+//
+//  EmbrkApp.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/7/24.
 
 import SwiftUI
-import SwiftData
+import Firebase
 
 @main
 struct EmbrkApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
+    @StateObject private var authManager: AuthManager
+    @StateObject private var challengeManager: ChallengeManager
+    
+    init() {
+        FirebaseApp.configure()
+        
+        let authManager = AuthManager()
+        let firestoreService = FirestoreService()
+        
+        _authManager = StateObject(wrappedValue: authManager)
+        _challengeManager = StateObject(wrappedValue: ChallengeManager(authManager: authManager, firestoreService: firestoreService))
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(authManager)
+                .environmentObject(challengeManager)
         }
-        .modelContainer(sharedModelContainer)
     }
 }

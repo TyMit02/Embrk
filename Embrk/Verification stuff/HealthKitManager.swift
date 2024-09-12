@@ -1,13 +1,20 @@
+//
+//  HealthKitManager.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/11/24.
+//
+
+
 import HealthKit
 
 class HealthKitManager {
     static let shared = HealthKitManager()
     private let healthStore = HKHealthStore()
     
-    func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+    func requestAuthorization() async throws {
         guard HKHealthStore.isHealthDataAvailable() else {
-            completion(false, NSError(domain: "com.yourapp.healthkit", code: 0, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
-            return
+            throw NSError(domain: "com.yourapp.healthkit", code: 0, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"])
         }
         
         let typesToRead: Set<HKObjectType> = [
@@ -16,40 +23,62 @@ class HealthKitManager {
             // Add other types as needed
         ]
         
-        healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
-            completion(success, error)
-        }
+        try await healthStore.requestAuthorization(toShare: [], read: typesToRead)
     }
     
-    func getStepCount(for date: Date, completion: @escaping (Double?, Error?) -> Void) {
+    func getStepCount(for date: Date) async throws -> Double {
         let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
         let predicate = HKQuery.predicateForSamples(withStart: date, end: nil, options: .strictStartDate)
         
-        let query = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
-            guard let result = result, let sum = result.sumQuantity() else {
-                completion(nil, error)
-                return
+        let statistics = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<HKStatistics, Error>) in
+            let query = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else if let result = result {
+                    continuation.resume(returning: result)
+                } else {
+                    continuation.resume(throwing: NSError(domain: "com.yourapp.healthkit", code: 1, userInfo: [NSLocalizedDescriptionKey: "No step count data available"]))
+                }
             }
-            let steps = sum.doubleValue(for: HKUnit.count())
-            completion(steps, nil)
+            healthStore.execute(query)
         }
         
-        healthStore.execute(query)
+        guard let sum = statistics.sumQuantity() else {
+            throw NSError(domain: "com.yourapp.healthkit", code: 1, userInfo: [NSLocalizedDescriptionKey: "No step count data available"])
+        }
+        
+        return sum.doubleValue(for: HKUnit.count())
     }
     
-    func getActiveEnergyBurned(for date: Date, completion: @escaping (Double?, Error?) -> Void) {
+    func getActiveEnergyBurned(for date: Date) async throws -> Double {
         let energyType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
         let predicate = HKQuery.predicateForSamples(withStart: date, end: nil, options: .strictStartDate)
         
-        let query = HKStatisticsQuery(quantityType: energyType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
-            guard let result = result, let sum = result.sumQuantity() else {
-                completion(nil, error)
-                return
+        let statistics = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<HKStatistics, Error>) in
+            let query = HKStatisticsQuery(quantityType: energyType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else if let result = result {
+                    continuation.resume(returning: result)
+                } else {
+                    continuation.resume(throwing: NSError(domain: "com.yourapp.healthkit", code: 2, userInfo: [NSLocalizedDescriptionKey: "No active energy data available"]))
+                }
             }
-            let calories = sum.doubleValue(for: HKUnit.kilocalorie())
-            completion(calories, nil)
+            healthStore.execute(query)
         }
         
-        healthStore.execute(query)
+        guard let sum = statistics.sumQuantity() else {
+            throw NSError(domain: "com.yourapp.healthkit", code: 2, userInfo: [NSLocalizedDescriptionKey: "No active energy data available"])
+        }
+        
+        return sum.doubleValue(for: HKUnit.kilocalorie())
+    }
+    
+    func getStepCountAsync(for date: Date) async throws -> Double {
+        try await getStepCount(for: date)
+    }
+   
+    func getActiveEnergyBurnedAsync(for date: Date) async throws -> Double {
+        try await getActiveEnergyBurned(for: date)
     }
 }

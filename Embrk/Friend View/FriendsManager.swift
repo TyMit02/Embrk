@@ -1,6 +1,14 @@
+//
+//  FriendsManager.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/11/24.
+//
+
+
 import Firebase
 import FirebaseFirestore
-import FirebaseFirestoreSwift
+import FirebaseAuth
 
 class FriendsManager: ObservableObject {
     private let db = Firestore.firestore()
@@ -29,21 +37,30 @@ class FriendsManager: ObservableObject {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             throw NSError(domain: "FriendsManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "No current user"])
         }
-        
+
         // Update the request status
         var updatedRequest = request
         updatedRequest.status = .accepted
-        
-        // Update both users' friends lists and remove the request
+
+        // Encode the friend request outside the transaction to avoid throwing inside the closure
+        let encodedRequest: [String: Any]
+        do {
+            encodedRequest = try Firestore.Encoder().encode(request)
+        } catch {
+            throw NSError(domain: "FriendsManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to encode request"])
+        }
+
         try await db.runTransaction { (transaction, errorPointer) -> Any? in
             let currentUserRef = self.db.collection("users").document(currentUserId)
             let otherUserRef = self.db.collection("users").document(request.fromUserId)
             
+            // Update current user friends and friend requests
             transaction.updateData([
                 "friends": FieldValue.arrayUnion([request.fromUserId]),
-                "friendRequests": FieldValue.arrayRemove([try Firestore.Encoder().encode(request)])
+                "friendRequests": FieldValue.arrayRemove([encodedRequest])
             ], forDocument: currentUserRef)
             
+            // Update other user friends list
             transaction.updateData([
                 "friends": FieldValue.arrayUnion([currentUserId])
             ], forDocument: otherUserRef)
@@ -51,6 +68,7 @@ class FriendsManager: ObservableObject {
             return nil
         }
     }
+
     
     func declineFriendRequest(_ request: FriendRequest) async throws {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
@@ -116,9 +134,9 @@ class FriendsManager: ObservableObject {
                 guard let self = self else { return }
                 
                 do {
-                    if let user = try document.data(as: User.self) {
-                        self.friendRequests = user.friendRequests.filter { $0.status == .pending }
-                        self.fetchFriends(friendIds: user.friends)
+                    if let user = try? document.data(as: User?.self) {
+                        self.friendRequests = user.friendRequests.filter { $0.status == .pending } ?? []
+                        self.fetchFriends(friendIds: user.friends ?? [])
                     }
                 } catch {
                     print("Error decoding user: \(error)")
@@ -127,7 +145,6 @@ class FriendsManager: ObservableObject {
     }
     
     private func fetchFriends(friendIds: [String]) {
-        let batch = db.batch()
         let dispatchGroup = DispatchGroup()
         
         var fetchedFriends: [User] = []
@@ -135,11 +152,11 @@ class FriendsManager: ObservableObject {
         for friendId in friendIds {
             dispatchGroup.enter()
             let docRef = db.collection("users").document(friendId)
-            batch.getDocument(docRef) { (document, error) in
+            docRef.getDocument { (document, error) in
                 defer { dispatchGroup.leave() }
                 if let document = document, document.exists {
                     do {
-                        if let friend = try document.data(as: User.self) {
+                        if let friend = try document.data(as: User?.self) {
                             fetchedFriends.append(friend)
                         }
                     } catch {
@@ -152,8 +169,6 @@ class FriendsManager: ObservableObject {
         dispatchGroup.notify(queue: .main) {
             self.friends = fetchedFriends
         }
-        
-        batch.commit()
     }
     
     func stopListening() {

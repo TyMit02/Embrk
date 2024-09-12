@@ -31,6 +31,7 @@ struct Challenge: Identifiable, Codable, Equatable {
     let dailyGoal: Int?
     let lifestyleType: LifestyleType?
     let verificationMethod: VerificationMethod
+    
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, difficulty, maxParticipants, participatingUsers, isOfficial, durationInDays, userProgress, creatorId, challengeType, healthKitMetric, verificationGoal, startDate, educationType, unitOfMeasurement, dailyGoal, lifestyleType, verificationMethod
@@ -60,26 +61,26 @@ struct Challenge: Identifiable, Codable, Equatable {
     }
 
     init(title: String, description: String, difficulty: String, maxParticipants: Int, isOfficial: Bool, durationInDays: Int, creatorId: String, challengeType: ChallengeType, healthKitMetric: HealthKitMetric? = nil, verificationGoal: Double? = nil, educationType: EducationType? = nil, unitOfMeasurement: String? = nil, dailyGoal: Int? = nil, lifestyleType: LifestyleType? = nil, verificationMethod: VerificationMethod = .manual, startDate: Date = Date()) {
-        self.title = title
-        self.description = description
-        self.difficulty = difficulty
-        self.maxParticipants = maxParticipants
-        self.participatingUsers = []
-        self.isOfficial = isOfficial
-        self.durationInDays = durationInDays
-        self.userProgress = [:]
-        self.creatorId = creatorId
-        self.challengeType = challengeType
-        self.healthKitMetric = healthKitMetric
-        self.verificationGoal = verificationGoal ?? VerificationGoalDeterminer.determineGoal(title: title, description: description, challengeType: challengeType)
-        self.educationType = educationType
-        self.unitOfMeasurement = unitOfMeasurement
-        self.dailyGoal = dailyGoal
-        self.lifestyleType = lifestyleType
-        self.verificationMethod = verificationMethod
-        self.startDate = startDate
-    }
-   
+           self.title = title
+           self.description = description
+           self.difficulty = difficulty
+           self.maxParticipants = maxParticipants
+           self.participatingUsers = []
+           self.isOfficial = isOfficial
+           self.durationInDays = durationInDays
+           self.userProgress = [:]
+           self.creatorId = creatorId
+           self.challengeType = challengeType
+           self.healthKitMetric = healthKitMetric
+           self.verificationGoal = verificationGoal ?? VerificationGoalDeterminer.determineGoal(title: title, description: description, challengeType: challengeType)
+           self.educationType = educationType
+           self.unitOfMeasurement = unitOfMeasurement
+           self.dailyGoal = dailyGoal
+           self.lifestyleType = lifestyleType
+           self.verificationMethod = verificationMethod
+           self.startDate = startDate
+       }
+    
     static func == (lhs: Challenge, rhs: Challenge) -> Bool {
         return lhs.id == rhs.id
     }

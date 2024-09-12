@@ -1,3 +1,11 @@
+//
+//  CustomTabBar.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/9/24.
+//
+
+
 import SwiftUI
 
 struct CustomTabBar: View {
@@ -15,14 +23,9 @@ struct CustomTabBar: View {
             Spacer()
         }
         .padding(.top, 8)
-        .padding(.bottom, 20) // Add padding at the bottom
-        .frame(height: 80) // Increase height to accommodate bottom padding
-        .background(
-            Rectangle()
-                .fill(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
-                .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: -4)
-        )
-        .ignoresSafeArea(edges: .bottom)
+        .padding(.bottom, 10)
+        .background(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
+        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: -4)
     }
     
     private func tabButton(for tab: Int, icon: String) -> some View {
