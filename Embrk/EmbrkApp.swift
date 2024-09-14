@@ -22,17 +22,27 @@ struct EmbrkApp: App {
         FirebaseApp.configure()
         
         let authManager = AuthManager()
-        let firestoreService = FirestoreService()
+               let firestoreService = FirestoreService()
+               
+               _authManager = StateObject(wrappedValue: authManager)
+               _challengeManager = StateObject(wrappedValue: ChallengeManager(authManager: authManager, firestoreService: firestoreService))
         
-        _authManager = StateObject(wrappedValue: authManager)
-        _challengeManager = StateObject(wrappedValue: ChallengeManager(authManager: authManager, firestoreService: firestoreService))
+        // Request HealthKit authorization
+        Task {
+            do {
+                try await HealthKitManager.shared.requestAuthorization()
+                print("HealthKit authorization successful")
+            } catch {
+                print("HealthKit authorization failed: \(error.localizedDescription)")
+            }
+        }
     }
     
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(authManager)
-                .environmentObject(challengeManager)
-        }
-    }
-}
+          WindowGroup {
+              ContentView()
+                  .environmentObject(authManager)
+                  .environmentObject(challengeManager)
+          }
+      }
+  }

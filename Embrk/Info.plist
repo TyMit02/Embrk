@@ -2,31 +2,39 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.YOUR-CLIENT-ID</string>
-			</array>
-		</dict>
-	</array>
-	<key>CFBundleIdentifier</key>
-	<string></string>
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
-	<key>MKDirectionsApplicationSupportedModes</key>
-	<array/>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-	</dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
-	<key>UILaunchScreen</key>
-	<dict/>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.YOUR-CLIENT-ID</string>
+            </array>
+        </dict>
+    </array>
+    <key>CFBundleIdentifier</key>
+    <string></string>
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <false/>
+    <key>MKDirectionsApplicationSupportedModes</key>
+    <array/>
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
+    </dict>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+    </array>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <!-- Add the following keys for HealthKit -->
+    <key>NSHealthShareUsageDescription</key>
+    <string>We need access to your health data to verify fitness challenges and track your progress.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>We need permission to update your health data for challenge-related activities.</string>
+    <!-- If you're using sleep data, add this key as well -->
+    <key>NSHealthClinicalHealthRecordsShareUsageDescription</key>
+    <string>We need access to your sleep data to verify sleep-related challenges.</string>
 </dict>
 </plist>

@@ -23,8 +23,13 @@ struct AdminView: View {
                 Button("Reset User Participations") {
                     resetUserParticipations()
                 }
+                
+                Button("Reset Onboarding") {
+                    UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+                }
             }
         }
+        
         .navigationTitle("Admin Panel")
         .alert(isPresented: $showAlert) {
             Alert(title: Text("Admin Action"), message: Text(alertMessage), dismissButton: .default(Text("OK")))

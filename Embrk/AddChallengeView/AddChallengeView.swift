@@ -6,104 +6,84 @@
 //
 
 import SwiftUI
-import Firebase
 import FirebaseFirestore
-import HealthKit
-
 
 struct AddChallengeView: View {
+    @StateObject private var viewModel = AddChallengeViewModel()
     @EnvironmentObject var challengeManager: ChallengeManager
     @EnvironmentObject var authManager: AuthManager
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.colorScheme) var colorScheme
     
-    @State private var title = ""
-    @State private var description = ""
-    @State private var difficulty = "Easy"
-    @State private var maxParticipants = 10
-    @State private var durationInDays = 30
-    @State private var selectedType: ChallengeType = .fitness
-    @State private var selectedHealthKitMetric: HealthKitMetric?
-    @State private var selectedVerificationMethod: Challenge.VerificationMethod = .manual
-    @State private var selectedMiscVerificationMethod: MiscellaneousVerificationManager.VerificationMethod = .checkbox
-    @State private var showAlert = false
-    @State private var alertMessage = ""
-    @State private var verificationGoal: String = ""
-    @State private var selectedEducationType: Challenge.EducationType = .reading
-    @State private var selectedLifestyleType: Challenge.LifestyleType = .meditation
-    @State private var unitOfMeasurement: String = ""
-    @State private var isOfficial = false
-    
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                headerSection
-                basicInfoSection
-                challengeTypeSection
-                specificDetailsSection
+        NavigationView {
+            ZStack {
+                backgroundColor.edgesIgnoringSafeArea(.all)
                 
-                if authManager.currentUser?.isAdmin == true {
-                    Toggle("Official Challenge", isOn: $isOfficial)
-                        .padding()
-                        .background(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
-                        .cornerRadius(15)
+                ScrollView {
+                    VStack(spacing: AppSpacing.large) {
+                        basicInfoSection
+                        challengeTypeSection
+                        
+                        switch viewModel.selectedType {
+                        case .fitness:
+                            fitnessSection
+                        case .education:
+                            educationSection
+                        case .lifestyle:
+                            lifestyleSection
+                        case .miscellaneous:
+                            miscellaneousSection
+                        }
+                        
+                        if authManager.currentUser?.isAdmin == true {
+                            officialToggleSection
+                        }
+                        
+                        createButton
+                    }
+                    .padding()
+                    .padding(.bottom, 100)
                 }
-                
-                saveButton
             }
-            .padding()
-        }
-        .background(colorScheme == .dark ? Color.black : AppColors.background)
-        .navigationBarTitle("Create Challenge", displayMode: .inline)
-        .alert(isPresented: $showAlert) {
-            Alert(title: Text("Challenge Creation"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+            .navigationBarTitle("Create Challenge", displayMode: .inline)
+            .navigationBarItems(leading: cancelButton)
+            .alert(isPresented: $viewModel.showAlert) {
+                Alert(title: Text("Challenge Creation"), message: Text(viewModel.alertMessage), dismissButton: .default(Text("OK")))
+            }
         }
     }
     
-    private var headerSection: some View {
-        Text("Create a New Challenge")
-            .font(AppFonts.title1)
-            .foregroundColor(AppColors.text)
-            .frame(maxWidth: .infinity, alignment: .leading)
+    private var backgroundColor: Color {
+        colorScheme == .dark ? Color.black : Color(UIColor.systemGroupedBackground)
     }
     
     private var basicInfoSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            TextField("Challenge Title", text: $title)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            sectionHeader("Basic Information")
             
-            TextField("Description", text: $description)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            customTextField(title: "Challenge Title", text: $viewModel.title)
             
-            Picker("Difficulty", selection: $difficulty) {
-                ForEach(["Easy", "Medium", "Hard"], id: \.self) { Text($0) }
-            }
-            .pickerStyle(SegmentedPickerStyle())
+            customTextEditor(title: "Description", text: $viewModel.description)
             
-            HStack {
-                Text("Max Participants: \(maxParticipants)")
-                Spacer()
-                Stepper("", value: $maxParticipants, in: 1...1000)
-            }
+            customPicker(title: "Difficulty", selection: $viewModel.difficulty, options: ["Easy", "Medium", "Hard"])
             
-            HStack {
-                Text("Duration: \(durationInDays) days")
-                Spacer()
-                Stepper("", value: $durationInDays, in: 1...365)
-            }
+            customStepper(title: "Max Participants", value: $viewModel.maxParticipants, range: 1...1000)
+            
+            customDatePicker(title: "Start Date", selection: $viewModel.startDate)
+            
+            customStepper(title: "Duration (days)", value: $viewModel.durationInDays, range: 1...365)
         }
         .padding()
-        .background(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
+        .background(sectionBackground)
         .cornerRadius(15)
     }
     
     private var challengeTypeSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            Text("Challenge Type")
-                .font(AppFonts.headline)
-                .foregroundColor(AppColors.text)
+            sectionHeader("Challenge Type")
             
-            Picker("Challenge Type", selection: $selectedType) {
+            Picker("Challenge Type", selection: $viewModel.selectedType) {
                 ForEach(ChallengeType.allCases, id: \.self) { type in
                     Text(type.rawValue).tag(type)
                 }
@@ -111,121 +91,287 @@ struct AddChallengeView: View {
             .pickerStyle(SegmentedPickerStyle())
         }
         .padding()
-        .background(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
+        .background(sectionBackground)
         .cornerRadius(15)
     }
     
-    private var specificDetailsSection: some View {
+    private var fitnessSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            Text("Specific Details")
-                .font(AppFonts.headline)
-                .foregroundColor(AppColors.text)
+            sectionHeader("Fitness Details")
             
-            switch selectedType {
-            case .fitness:
-                fitnessDetails
-            case .education:
-                educationDetails
-            case .lifestyle:
-                lifestyleDetails
-            case .miscellaneous:
-                miscellaneousDetails
+            CustomDropdownMenu(
+                title: "Metric",
+                selection: $viewModel.selectedHealthKitMetric,
+                options: HealthKitMetric.allCases
+            )
+            
+            customTextField(title: "Daily Goal", text: $viewModel.verificationGoal, keyboardType: .numberPad)
+        }
+        .padding()
+        .background(sectionBackground)
+        .cornerRadius(15)
+    }
+    
+    private var lifestyleSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            sectionHeader("Lifestyle Details")
+            
+            CustomDropdownMenu(
+                title: "Lifestyle Type",
+                selection: $viewModel.selectedLifestyleType,
+                options: Challenge.LifestyleType.allCases
+            )
+            
+            customTextField(title: "Daily Goal", text: $viewModel.verificationGoal, keyboardType: .numberPad)
+            customTextField(title: "Unit of Measurement", text: $viewModel.unitOfMeasurement)
+        }
+        .padding()
+        .background(sectionBackground)
+        .cornerRadius(15)
+    }
+
+    private var educationSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            sectionHeader("Education Details")
+            
+            CustomDropdownMenu(
+                title: "Education Type",
+                selection: $viewModel.selectedEducationType,
+                options: Challenge.EducationType.allCases
+            )
+            
+            customTextField(title: "Daily Goal", text: $viewModel.verificationGoal, keyboardType: .numberPad)
+            customTextField(title: "Unit of Measurement", text: $viewModel.unitOfMeasurement)
+        }
+        .padding()
+        .background(sectionBackground)
+        .cornerRadius(15)
+    }
+
+    private var miscellaneousSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            sectionHeader("Miscellaneous Details")
+            
+            CustomDropdownMenu(
+                title: "Verification Method",
+                selection: $viewModel.selectedVerificationMethod,
+                options: Challenge.VerificationMethod.allCases
+            )
+            
+            if viewModel.selectedVerificationMethod == .timeBased {
+                customTextField(title: "Daily Goal (minutes)", text: $viewModel.verificationGoal, keyboardType: .numberPad)
             }
         }
         .padding()
-        .background(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
+        .background(sectionBackground)
         .cornerRadius(15)
     }
     
-    private var fitnessDetails: some View {
-        VStack {
-            Picker("HealthKit Metric", selection: $selectedHealthKitMetric) {
-                ForEach(HealthKitMetric.allCases, id: \.self) { metric in
-                    Text(metric.rawValue).tag(metric as HealthKitMetric?)
-                }
-            }
-            if selectedHealthKitMetric == nil {
-                Text("Please select a HealthKit metric")
-                    .foregroundColor(.red)
-            }
-        }
-    }
-    
-    private var educationDetails: some View {
+    private var officialToggleSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Picker("Education Type", selection: $selectedEducationType) {
-                ForEach(Challenge.EducationType.allCases, id: \.self) { type in
-                    Text(type.rawValue).tag(type)
-                }
-            }
-            TextField("Unit of Measurement", text: $unitOfMeasurement)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            TextField("Daily Goal", text: $verificationGoal)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .keyboardType(.numberPad)
+            sectionHeader("Official Status")
+            Toggle("Official Challenge", isOn: $viewModel.isOfficial)
+        }
+        .padding()
+        .background(sectionBackground)
+        .cornerRadius(15)
+    }
+    
+    private var cancelButton: some View {
+        Button(action: {
+            presentationMode.wrappedValue.dismiss()
+        }) {
+            Image(systemName: "xmark")
+                .foregroundColor(AppColors.primary)
         }
     }
     
-    private var lifestyleDetails: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Picker("Lifestyle Type", selection: $selectedLifestyleType) {
-                ForEach(Challenge.LifestyleType.allCases, id: \.self) { type in
-                    Text(type.rawValue).tag(type)
+    private var createButton: some View {
+        Button(action: {
+            viewModel.createChallenge(challengeManager: challengeManager, authManager: authManager) { result in
+                switch result {
+                case .success:
+                    presentationMode.wrappedValue.dismiss()
+                case .failure(let error):
+                    viewModel.showAlert = true
+                    viewModel.alertMessage = error.localizedDescription
                 }
             }
-            Picker("Verification Method", selection: $selectedVerificationMethod) {
-                ForEach(Challenge.VerificationMethod.allCases, id: \.self) { method in
-                    Text(method.rawValue).tag(method)
-                }
-            }
-            if selectedVerificationMethod == .manual {
-                TextField("Verification Goal", text: $verificationGoal)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.numberPad)
-            }
-        }
-    }
-    
-    private var miscellaneousDetails: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Picker("Verification Method", selection: $selectedMiscVerificationMethod) {
-                ForEach(MiscellaneousVerificationManager.VerificationMethod.allCases, id: \.self) { method in
-                    Text(method.rawValue).tag(method)
-                }
-            }
-            if selectedMiscVerificationMethod == .numericInput || selectedMiscVerificationMethod == .timerBased {
-                TextField("Verification Goal", text: $verificationGoal)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.numberPad)
-            }
-        }
-    }
-    
-    
-    
-    
-    private var saveButton: some View {
-        Button(action: saveChallenge) {
+        }) {
             Text("Create Challenge")
                 .font(AppFonts.headline)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(AppColors.primary)
-                .cornerRadius(15)
+                .cornerRadius(10)
         }
     }
     
-    private func saveChallenge() {
-        guard !title.isEmpty && !description.isEmpty else {
-            alertMessage = "Please fill in all fields"
-            showAlert = true
-            return
+    // Helper Views
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(AppFonts.headline)
+            .foregroundColor(AppColors.primary)
+    }
+    
+    private func customTextField(title: String, text: Binding<String>, keyboardType: UIKeyboardType = .default) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(AppFonts.caption)
+                .foregroundColor(AppColors.lightText)
+            TextField(title, text: text)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .keyboardType(keyboardType)
         }
+    }
+    
+    private func customTextEditor(title: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(AppFonts.caption)
+                .foregroundColor(AppColors.lightText)
+            TextEditor(text: text)
+                .frame(height: 100)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
+        }
+    }
+    
+    struct CustomDropdownMenu<T: Hashable & CustomStringConvertible>: View {
+        let title: String
+        let selection: Binding<T?>
+        let options: [T]
         
-        guard let currentUser = challengeManager.currentUser else {
-            alertMessage = "Error: User not logged in"
-            showAlert = true
+        @State private var isExpanded = false
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(title)
+                    .font(AppFonts.caption)
+                    .foregroundColor(AppColors.lightText)
+                
+                DisclosureGroup(
+                    isExpanded: $isExpanded,
+                    content: {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(options, id: \.self) { option in
+                                    Text(option.description)
+                                        .font(AppFonts.body)
+                                        .padding(.vertical, 5)
+                                        .onTapGesture {
+                                            selection.wrappedValue = option
+                                            withAnimation {
+                                                self.isExpanded.toggle()
+                                            }
+                                        }
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 200)
+                    },
+                    label: {
+                        Text(selection.wrappedValue?.description ?? "Select \(title)")
+                            .foregroundColor(selection.wrappedValue == nil ? AppColors.lightText : AppColors.text)
+                            .font(AppFonts.body)
+                    }
+                )
+                .accentColor(AppColors.primary)
+                .padding()
+                .background(Color(UIColor.systemBackground))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(AppColors.lightText, lineWidth: 1)
+                )
+            }
+        }
+    }
+    
+    private func customPicker<T: Hashable & CustomStringConvertible>(
+        title: String,
+        selection: Binding<T>,
+        options: [T]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(AppFonts.caption)
+                .foregroundColor(AppColors.lightText)
+            Picker(title, selection: selection) {
+                ForEach(options, id: \.self) { option in
+                    Text(option.description).tag(option)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+        }
+    }
+
+    // Overload for optional bindings
+    private func customPicker<T: Hashable & CustomStringConvertible>(
+        title: String,
+        selection: Binding<T?>,
+        options: [T]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(AppFonts.caption)
+                .foregroundColor(AppColors.lightText)
+            Picker(title, selection: selection) {
+                Text("Select \(title)").tag(nil as T?)
+                ForEach(options, id: \.self) { option in
+                    Text(option.description).tag(option as T?)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+        }
+    }
+    
+    private func customStepper(title: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        HStack {
+            Text(title)
+                .font(AppFonts.body)
+                .foregroundColor(AppColors.text)
+            Spacer()
+            Stepper("\(value.wrappedValue)", value: value, in: range)
+        }
+    }
+    
+    private func customDatePicker(title: String, selection: Binding<Date>) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(AppFonts.caption)
+                .foregroundColor(AppColors.lightText)
+            DatePicker("", selection: selection, displayedComponents: .date)
+                .datePickerStyle(CompactDatePickerStyle())
+        }
+    }
+    
+    private var sectionBackground: Color {
+        colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white
+    }
+}
+
+class AddChallengeViewModel: ObservableObject {
+    @Published var title = ""
+    @Published var description = ""
+    @Published var difficulty = "Easy"
+    @Published var maxParticipants = 10
+    @Published var startDate = Date()
+    @Published var durationInDays = 30
+    @Published var selectedType: ChallengeType = .fitness
+    @Published var selectedHealthKitMetric: HealthKitMetric?
+    @Published var selectedEducationType: Challenge.EducationType?
+    @Published var selectedLifestyleType: Challenge.LifestyleType?
+    @Published var selectedVerificationMethod: Challenge.VerificationMethod?
+    @Published var verificationGoal = ""
+    @Published var unitOfMeasurement = ""
+    @Published var isOfficial = false
+    @Published var showAlert = false
+    @Published var alertMessage = ""
+    
+    func createChallenge(challengeManager: ChallengeManager, authManager: AuthManager, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let currentUser = authManager.currentUser else {
+            completion(.failure(NSError(domain: "AddChallengeViewModel", code: 0, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])))
             return
         }
         
@@ -234,29 +380,29 @@ struct AddChallengeView: View {
             description: description,
             difficulty: difficulty,
             maxParticipants: maxParticipants,
-            isOfficial: false,
+            isOfficial: isOfficial,
             durationInDays: durationInDays,
             creatorId: currentUser.id ?? "",
             challengeType: selectedType,
-            healthKitMetric: selectedHealthKitMetric,
-            verificationGoal: Double(verificationGoal),
+            healthKitMetric: selectedType == .fitness ? selectedHealthKitMetric : nil,
+            verificationGoal: selectedType == .fitness ? Double(verificationGoal) : nil,
             educationType: selectedType == .education ? selectedEducationType : nil,
-            unitOfMeasurement: selectedType == .education ? unitOfMeasurement : nil,
-            dailyGoal: selectedType == .education ? Int(verificationGoal) : nil,
+            unitOfMeasurement: selectedType == .education || selectedType == .lifestyle ? unitOfMeasurement : nil,
+            dailyGoal: selectedType == .education || selectedType == .lifestyle ? Int(verificationGoal) : nil,
             lifestyleType: selectedType == .lifestyle ? selectedLifestyleType : nil,
-            verificationMethod: selectedType == .lifestyle ? selectedVerificationMethod : .manual,
-            startDate: Date()
+            verificationMethod: (selectedType == .miscellaneous ? selectedVerificationMethod : .manual)!,
+            startDate: startDate
         )
         
         challengeManager.addChallenge(newChallenge)
-        alertMessage = "Challenge created successfully!"
-        showAlert = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            presentationMode.wrappedValue.dismiss()
-        }
+        completion(.success(()))
     }
 }
 
-#Preview {
-    AddChallengeView()
+struct AddChallengeView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddChallengeView()
+            .environmentObject(ChallengeManager(authManager: AuthManager(), firestoreService: FirestoreService()))
+            .environmentObject(AuthManager())
+    }
 }

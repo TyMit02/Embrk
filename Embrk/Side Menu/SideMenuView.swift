@@ -164,7 +164,10 @@ struct SideMenuRowView: View {
 }
 
 enum SideMenuOptionModel: Int, CaseIterable, Identifiable {
-    case home, add, profile, search, friends, pro, admin
+    case home, add, profile, search
+         //admin
+//         friends, pro,
+  
     
     var id: Int { self.rawValue }
     
@@ -174,9 +177,9 @@ enum SideMenuOptionModel: Int, CaseIterable, Identifiable {
         case .add: return "Add Challenge"
         case .profile: return "Profile"
         case .search: return "Search"
-        case .friends: return "Friends"
-        case .pro: return "Upgrade to Pro"
-        case .admin: return "Admin"
+//        case .friends: return "Friends"
+//        case .pro: return "Upgrade to Pro"
+      //  case .admin: return "Admin"
         }
     }
     
@@ -186,9 +189,9 @@ enum SideMenuOptionModel: Int, CaseIterable, Identifiable {
         case .add: return "plus.app"
         case .profile: return "person"
         case .search: return "magnifyingglass"
-        case .friends: return "person.3"
-        case .pro: return "star"
-        case .admin: return "trash"
+//        case .friends: return "person.3"
+//        case .pro: return "star"
+       // case .admin: return "trash"
         }
     }
 }

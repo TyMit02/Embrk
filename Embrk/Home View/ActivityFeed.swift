@@ -1,3 +1,11 @@
+//
+//  ActivityFeed.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/14/24.
+//
+import SwiftUI
+
 struct ActivityFeed: View {
     @EnvironmentObject var challengeManager: ChallengeManager
     
@@ -37,7 +45,7 @@ struct ActivityCard: View {
                 .foregroundColor(AppColors.text)
                 .lineLimit(2)
             Text(activity.timeAgo)
-                .font(AppFonts.caption2)
+                .font(AppFonts.caption)
                 .foregroundColor(AppColors.lightText)
         }
         .padding()
@@ -47,10 +55,3 @@ struct ActivityCard: View {
     }
 }
 
-struct ActivityItem: Identifiable {
-    let id = UUID()
-    let username: String
-    let description: String
-    let timeAgo: String
-    let iconName: String
-}

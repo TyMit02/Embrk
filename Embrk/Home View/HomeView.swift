@@ -32,40 +32,21 @@ struct HomeView: View {
                             welcomeSection
                             featuredChallengeSection
                             challengesSection
-                            trendingUsersSection
+                            ActivityFeed()
                         }
                         .padding(.horizontal)
+                        .padding(.bottom, 100)
                     }
-                }
-                
-                VStack {
-                    Spacer()
-                    CustomTabBar(selectedTab: $selectedTab)
-                        .background(colorScheme == .dark ? Color(hex: "1C1C1E") : Color.white)
-                        .ignoresSafeArea(edges: .bottom)
                 }
             }
             .navigationBarHidden(true)
             .onAppear {
                 challengeManager.loadChallenges()
+                challengeManager.fetchRecentActivities()
             }
         }
     }
     
-    
-//    private func loadData() {
-//           isLoading = true
-//           challengeManager.loadChallenges { result in
-//               isLoading = false
-//               switch result {
-//               case .success:
-//                   errorMessage = nil
-//               case .failure(let error):
-//                   errorMessage = error.localizedDescription
-//               }
-//           }
-//       }
-//
     private var backgroundColor: Color {
         colorScheme == .dark ? Color.black : Color(UIColor.systemGroupedBackground)
     }

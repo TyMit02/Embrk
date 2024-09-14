@@ -5,9 +5,8 @@
 //  Created by Ty Mitchell on 9/8/24.
 //
 
-import Swift
 import SwiftUI
-import Foundation
+import Firebase
 import FirebaseFirestore
 import Combine
 
@@ -26,62 +25,98 @@ class ChallengeManager: ObservableObject {
     @Published var communityChallenges: [Challenge] = []
     private var cancellables: Set<AnyCancellable> = []
     @Published var isLoading = false
-     @Published var errorMessage: String?
-      @Published var completedChallengesCount: Int = 0
-      @Published var createdChallengesCount: Int = 0
-      
-      @Published var joinedChallenges: [Challenge] = []
-      @Published var completedChallenges: [Challenge] = []
-      @Published var createdChallenges: [Challenge] = []
-    
+    @Published var errorMessage: String?
+    @Published var completedChallengesCount: Int = 0
+    @Published var createdChallengesCount: Int = 0
+    @Published var recentActivities: [ActivityItem] = []
+    @Published var joinedChallenges: [Challenge] = []
+    @Published var completedChallenges: [Challenge] = []
+    @Published var createdChallenges: [Challenge] = []
     
     private let db = Firestore.firestore()
     private let leaderboardManager = LeaderboardManager()
     
     init(authManager: AuthManager, firestoreService: FirestoreService) {
         self.authManager = authManager
-              self.firestoreService = firestoreService
-              setupSubscriptions()
-              setupChallengeListener()
-
-      }
+        self.firestoreService = firestoreService
+        setupSubscriptions()
+        setupChallengeListener()
+        fetchUsers()
+    }
     
     private func setupSubscriptions() {
-            authManager.$currentUser
-                .sink { [weak self] user in
-                    self?.currentUser = user
-                    print("DEBUG: Current user updated: \(user?.id ?? "nil")")
-                }
-                .store(in: &cancellables)
-        }
+        authManager.$currentUser
+            .sink { [weak self] user in
+                self?.currentUser = user
+                print("DEBUG: Current user updated: \(user?.id ?? "nil")")
+            }
+            .store(in: &cancellables)
+    }
     
-   
+    func checkAndHandleCompletedChallenges() {
+        let now = Date()
+        for challenge in challenges {
+            let endDate = challenge.startDate.addingTimeInterval(TimeInterval(challenge.durationInDays * 24 * 60 * 60))
+            if now > endDate {
+                if challenge.isOfficial {
+                    resetOfficialChallenge(challenge)
+                } else {
+                    handleCompletedCommunityChallenge(challenge)
+                }
+            }
+        }
+    }
+    
+    private func resetOfficialChallenge(_ challenge: Challenge) {
+        var updatedChallenge = challenge
+        updatedChallenge.startDate = Date()
+        updatedChallenge.participatingUsers = []
+        updatedChallenge.userProgress = [:]
+        updateChallenge(updatedChallenge)
+    }
+    
+    private func handleCompletedCommunityChallenge(_ challenge: Challenge) {
+        for userId in challenge.participatingUsers {
+            if let progress = challenge.userProgress[userId], progress.count >= challenge.durationInDays {
+                addCompletedChallenge(challenge, for: userId)
+            }
+        }
+        deleteChallenge(challenge)
+    }
+    
+    private func addCompletedChallenge(_ challenge: Challenge, for userId: String) {
+        db.collection("users").document(userId).updateData([
+            "completedChallenges": FieldValue.arrayUnion([challenge.id])
+        ]) { error in
+            if let error = error {
+                print("Error adding completed challenge: \(error)")
+            }
+        }
+    }
     
     func updateActiveChallenges() {
-           guard let currentUserId = authManager.currentUser?.id else { return }
-           activeChallenges = challenges.filter { $0.participatingUsers.contains(currentUserId) }
-       }
-
-        func updateFeaturedChallenge() {
-            // For example, featured challenge could be a random official challenge
-            featuredChallenge = challenges.filter { $0.isOfficial }.randomElement()
-        }
+        guard let currentUserId = authManager.currentUser?.id else { return }
+        activeChallenges = challenges.filter { $0.participatingUsers.contains(currentUserId) }
+    }
     
+    func updateFeaturedChallenge() {
+        featuredChallenge = challenges.filter { $0.isOfficial }.randomElement()
+    }
     
     func addChallenge(_ challenge: Challenge) {
-           do {
-               let _ = try db.collection("challenges").addDocument(from: challenge)
-               self.challenges.append(challenge)
-               self.objectWillChange.send()
-           } catch {
-               print("Error adding challenge: \(error)")
-           }
-       }
-       
-       func getOfficialChallenges() -> [Challenge] {
-           return challenges.filter { $0.isOfficial }
-       }
-
+        do {
+            let _ = try db.collection("challenges").addDocument(from: challenge)
+            self.challenges.append(challenge)
+            self.objectWillChange.send()
+        } catch {
+            print("Error adding challenge: \(error)")
+        }
+    }
+    
+    func getOfficialChallenges() -> [Challenge] {
+        return challenges.filter { $0.isOfficial }
+    }
+    
     func updateChallenge(_ challenge: Challenge) {
         if let id = challenge.id {
             do {
@@ -109,109 +144,106 @@ class ChallengeManager: ObservableObject {
         }
     }
     
+    @MainActor
+    func joinChallenge(_ challengeId: String) async throws {
+        print("DEBUG: Attempting to join challenge: \(challengeId)")
+        guard let userId = currentUser?.id,
+              var challenge = challenges.first(where: { $0.id == challengeId }) else {
+            throw NSError(domain: "ChallengeManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "Challenge or user not found"])
+        }
+        
+        if !challenge.participatingUsers.contains(userId) {
+            challenge.participatingUsers.append(userId)
+            try await firestoreService.updateChallenge(challenge)
+            if let index = challenges.firstIndex(where: { $0.id == challengeId }) {
+                challenges[index] = challenge
+            }
+            print("DEBUG: Successfully joined challenge: \(challengeId)")
+        } else {
+            print("DEBUG: User is already participating in this challenge")
+        }
+    }
     
     @MainActor
-       func joinChallenge(_ challengeId: String) async throws {
-           print("DEBUG: Attempting to join challenge: \(challengeId)")
-           guard let userId = currentUser?.id,
-                 var challenge = challenges.first(where: { $0.id == challengeId }) else {
-               throw NSError(domain: "ChallengeManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "Challenge or user not found"])
-           }
-           
-           if !challenge.participatingUsers.contains(userId) {
-               challenge.participatingUsers.append(userId)
-               try await firestoreService.updateChallenge(challenge)
-               if let index = challenges.firstIndex(where: { $0.id == challengeId }) {
-                   challenges[index] = challenge
-               }
-               print("DEBUG: Successfully joined challenge: \(challengeId)")
-           } else {
-               print("DEBUG: User is already participating in this challenge")
-           }
-       }
-  
-    @MainActor
-      func leaveChallenge(_ challengeId: String) async throws {
-          print("DEBUG: Attempting to leave challenge: \(challengeId)")
-          guard let userId = currentUser?.id,
-                var challenge = challenges.first(where: { $0.id == challengeId }) else {
-              throw NSError(domain: "ChallengeManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "Challenge or user not found"])
-          }
-          
-          if challenge.participatingUsers.contains(userId) {
-              challenge.participatingUsers.removeAll { $0 == userId }
-              try await firestoreService.updateChallenge(challenge)
-              if let index = challenges.firstIndex(where: { $0.id == challengeId }) {
-                  challenges[index] = challenge
-              }
-              print("DEBUG: Successfully left challenge: \(challengeId)")
-          } else {
-              print("DEBUG: User is not participating in this challenge")
-          }
-      }
-      
-
+    func leaveChallenge(_ challengeId: String) async throws {
+        print("DEBUG: Attempting to leave challenge: \(challengeId)")
+        guard let userId = currentUser?.id,
+              var challenge = challenges.first(where: { $0.id == challengeId }) else {
+            throw NSError(domain: "ChallengeManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "Challenge or user not found"])
+        }
+        
+        if challenge.participatingUsers.contains(userId) {
+            challenge.participatingUsers.removeAll { $0 == userId }
+            try await firestoreService.updateChallenge(challenge)
+            if let index = challenges.firstIndex(where: { $0.id == challengeId }) {
+                challenges[index] = challenge
+            }
+            print("DEBUG: Successfully left challenge: \(challengeId)")
+        } else {
+            print("DEBUG: User is not participating in this challenge")
+        }
+    }
+    
     func getChallenge(by id: String) -> Challenge? {
-           let challenge = challenges.first { $0.id == id }
-           print("DEBUG: getChallenge for id \(id). Found: \(challenge != nil)")
-           return challenge
-       }
+        let challenge = challenges.first { $0.id == id }
+        print("DEBUG: getChallenge for id \(id). Found: \(challenge != nil)")
+        return challenge
+    }
     
     func isParticipating(in challenge: Challenge) -> Bool {
-            let result = challenge.participatingUsers.contains(currentUser?.id ?? "")
-            print("DEBUG: isParticipating check for challenge \(challenge.id ?? "unknown"): \(result)")
-            return result
-        }
-        
-        
+        let result = challenge.participatingUsers.contains(currentUser?.id ?? "")
+        print("DEBUG: isParticipating check for challenge \(challenge.id ?? "unknown"): \(result)")
+        return result
+    }
+    
     func getUserProgressForChallenge(_ challengeId: String) -> Int? {
-            guard let currentUser = currentUser,
-                  let challenge = challenges.first(where: { $0.id == challengeId }) else {
-                return nil
-            }
-            
-            return challenge.userProgress[currentUser.id ?? ""]?.count ?? 0
+        guard let currentUser = currentUser,
+              let challenge = challenges.first(where: { $0.id == challengeId }) else {
+            return nil
         }
         
-        func canMarkTodayAsCompleted(for challengeId: String) -> Bool {
-            guard let currentUser = currentUser,
-                  let challenge = challenges.first(where: { $0.id == challengeId }) else {
-                return false
-            }
-            
-            let today = Calendar.current.startOfDay(for: Date())
-            let progress = challenge.userProgress[currentUser.id ?? ""] ?? []
-            return !progress.contains(where: { Calendar.current.isDate($0.dateValue(), inSameDayAs: today) })
+        return challenge.userProgress[currentUser.id ?? ""]?.count ?? 0
+    }
+    
+    func canMarkTodayAsCompleted(for challengeId: String) -> Bool {
+        guard let currentUser = currentUser,
+              let challenge = challenges.first(where: { $0.id == challengeId }) else {
+            return false
         }
         
+        let today = Calendar.current.startOfDay(for: Date())
+        let progress = challenge.userProgress[currentUser.id ?? ""] ?? []
+        return !progress.contains(where: { Calendar.current.isDate($0.dateValue(), inSameDayAs: today) })
+    }
+    
     func markDayAsCompleted(for challengeId: String) {
-            guard let currentUser = currentUser,
-                  let challengeIndex = challenges.firstIndex(where: { $0.id == challengeId }) else {
-                return
-            }
-            
-            var challenge = challenges[challengeIndex]
-            var progress = challenge.userProgress[currentUser.id ?? ""] ?? []
-            
-            let today = Calendar.current.startOfDay(for: Date())
-            if !progress.contains(where: { Calendar.current.isDate($0.dateValue(), inSameDayAs: today) }) {
-                progress.append(Timestamp(date: today))
-                challenge.userProgress[currentUser.id ?? ""] = progress
-                updateChallenge(challenge)
-                
-                // Calculate current streak
-                let currentStreak = calculateCurrentStreak(progress: progress)
-                
-                // Update the leaderboard
-                leaderboardManager.updateScore(
-                    forChallenge: challengeId,
-                    userId: currentUser.id ?? "",
-                    daysCompleted: progress.count,
-                    currentStreak: currentStreak,
-                    challengeDifficulty: challenge.difficulty
-                )
-            }
+        guard let currentUser = currentUser,
+              let challengeIndex = challenges.firstIndex(where: { $0.id == challengeId }) else {
+            return
         }
+        
+        var challenge = challenges[challengeIndex]
+        var progress = challenge.userProgress[currentUser.id ?? ""] ?? []
+        
+        let today = Calendar.current.startOfDay(for: Date())
+        if !progress.contains(where: { Calendar.current.isDate($0.dateValue(), inSameDayAs: today) }) {
+            progress.append(Timestamp(date: today))
+            challenge.userProgress[currentUser.id ?? ""] = progress
+            updateChallenge(challenge)
+            
+            // Calculate current streak
+            let currentStreak = calculateCurrentStreak(progress: progress)
+            
+            // Update the leaderboard
+            leaderboardManager.updateScore(
+                forChallenge: challengeId,
+                userId: currentUser.id ?? "",
+                daysCompleted: progress.count,
+                currentStreak: currentStreak,
+                challengeDifficulty: challenge.difficulty
+            )
+        }
+    }
     
     private func calculateCurrentStreak(progress: [Timestamp]) -> Int {
         let sortedDates = progress.map { $0.dateValue() }.sorted(by: >)
@@ -234,143 +266,139 @@ class ChallengeManager: ObservableObject {
         
         return streak
     }
-        
     
     func fetchChallenges() {
-            db.collection("challenges").addSnapshotListener { [weak self] (querySnapshot, error) in
-                guard let documents = querySnapshot?.documents else {
-                    print("Error fetching challenges: \(error?.localizedDescription ?? "Unknown error")")
-                    return
-                }
-                
-                self?.challenges = documents.compactMap { document -> Challenge? in
-                    try? document.data(as: Challenge.self)
-                }
+        db.collection("challenges").addSnapshotListener { [weak self] (querySnapshot, error) in
+            guard let documents = querySnapshot?.documents else {
+                print("Error fetching challenges: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            self?.challenges = documents.compactMap { document -> Challenge? in
+                try? document.data(as: Challenge.self)
             }
         }
-        
+    }
+    
     func updateProgress(for challengeId: String, userId: String, progress: [Timestamp]) {
-           let challengeRef = db.collection("challenges").document(challengeId)
-           challengeRef.updateData([
-               "userProgress.\(userId)": progress
-           ]) { error in
-               if let error = error {
-                   print("Error updating progress: \(error)")
-               } else {
-                   print("Progress updated successfully")
-               }
-           }
-       }
-
-       func getUserProgress(for challengeId: String, userId: String) -> Int {
-           guard let challenge = challenges.first(where: { $0.id == challengeId }) else {
-               return 0
-           }
-           return challenge.userProgress[userId]?.count ?? 0
-       }
-
-   
-    func getUser(by id: String) -> User? {
-            return users.first { $0.id == id }
+        let challengeRef = db.collection("challenges").document(challengeId)
+        challengeRef.updateData([
+            "userProgress.\(userId)": progress
+        ]) { error in
+            if let error = error {
+                print("Error updating progress: \(error)")
+            } else {
+                print("Progress updated successfully")
+            }
         }
+    }
+    
+    func getUserProgress(for challengeId: String, userId: String) -> Int {
+        guard let challenge = challenges.first(where: { $0.id == challengeId }) else {
+            return 0
+        }
+        return challenge.userProgress[userId]?.count ?? 0
+    }
+    
+    func getUser(by id: String) -> User? {
+        return users.first { $0.id == id }
+    }
     
     func updateProgress(for challengeId: String, userId: String, newProgress: Int) {
-            let challengeRef = db.collection("challenges").document(challengeId)
-            let leaderboardRef = db.collection("leaderboards").document(challengeId).collection("entries").document(userId)
-
-            db.runTransaction({ (transaction, errorPointer) -> Any? in
-                let challengeDocument: DocumentSnapshot
-                do {
-                    try challengeDocument = transaction.getDocument(challengeRef)
-                } catch let fetchError as NSError {
-                    errorPointer?.pointee = fetchError
-                    return nil
-                }
-
-                guard var challenge = try? challengeDocument.data(as: Challenge.self) else {
-                    let error = NSError(domain: "AppErrorDomain", code: -1, userInfo: [NSLocalizedDescriptionKey: "Challenge not found"])
-                    errorPointer?.pointee = error
-                    return nil
-                }
-
-                // Update challenge progress
-                if var userProgress = challenge.userProgress[userId] {
-                    userProgress.append(Timestamp(date: Date()))
-                    challenge.userProgress[userId] = userProgress
-                } else {
-                    challenge.userProgress[userId] = [Timestamp(date: Date())]
-                }
-
-                // Calculate current streak
-                let currentStreak = self.calculateCurrentStreak(progress: challenge.userProgress[userId] ?? [])
-
-                // Update challenge document
-                do {
-                    try transaction.setData(from: challenge, forDocument: challengeRef)
-                } catch let error as NSError {
-                    errorPointer?.pointee = error
-                    return nil
-                }
-
-                // Update leaderboard
-                let leaderboardEntry = LeaderboardEntry(
-                    userId: userId,
-                    username: "", // We'll need to fetch this separately
-                    score: 0, // This will be calculated in LeaderboardManager
-                    daysCompleted: newProgress,
-                    currentStreak: currentStreak,
-                    longestStreak: currentStreak, // This should be max of current and previous longest
-                    lastUpdated: Date()
-                )
-
-                do {
-                    try transaction.setData(from: leaderboardEntry, forDocument: leaderboardRef, merge: true)
-                } catch let error as NSError {
-                    errorPointer?.pointee = error
-                    return nil
-                }
-
+        let challengeRef = db.collection("challenges").document(challengeId)
+        let leaderboardRef = db.collection("leaderboards").document(challengeId).collection("entries").document(userId)
+        
+        db.runTransaction({ (transaction, errorPointer) -> Any? in
+            let challengeDocument: DocumentSnapshot
+            do {
+                try challengeDocument = transaction.getDocument(challengeRef)
+            } catch let fetchError as NSError {
+                errorPointer?.pointee = fetchError
                 return nil
-            }) { (object, error) in
-                if let error = error {
-                    print("Transaction failed: \(error)")
-                } else {
-                    print("Transaction successfully committed!")
-                    self.leaderboardManager.updateScore(
-                        forChallenge: challengeId,
-                        userId: userId,
-                        daysCompleted: newProgress,
-                        currentStreak: self.calculateCurrentStreak(progress: self.challenges.first(where: { $0.id == challengeId })?.userProgress[userId] ?? []),
-                        challengeDifficulty: self.challenges.first(where: { $0.id == challengeId })?.difficulty ?? "Medium"
-                    )
-                }
+            }
+            
+            guard var challenge = try? challengeDocument.data(as: Challenge.self) else {
+                let error = NSError(domain: "AppErrorDomain", code: -1, userInfo: [NSLocalizedDescriptionKey: "Challenge not found"])
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            // Update challenge progress
+            if var userProgress = challenge.userProgress[userId] {
+                userProgress.append(Timestamp(date: Date()))
+                challenge.userProgress[userId] = userProgress
+            } else {
+                challenge.userProgress[userId] = [Timestamp(date: Date())]
+            }
+            
+            // Calculate current streak
+            let currentStreak = self.calculateCurrentStreak(progress: challenge.userProgress[userId] ?? [])
+            
+            // Update challenge document
+            do {
+                try transaction.setData(from: challenge, forDocument: challengeRef)
+            } catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            // Update leaderboard
+            let leaderboardEntry = LeaderboardEntry(
+                userId: userId,
+                username: "", // We'll need to fetch this separately
+                score: 0, // This will be calculated in LeaderboardManager
+                daysCompleted: newProgress,
+                currentStreak: currentStreak,
+                longestStreak: currentStreak, // This should be max of current and previous longest
+                lastUpdated: Date()
+            )
+            
+            do {
+                try transaction.setData(from: leaderboardEntry, forDocument: leaderboardRef, merge: true)
+            } catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            return nil
+        }) { (object, error) in
+            if let error = error {
+                print("Transaction failed: \(error)")
+            } else {
+                print("Transaction successfully committed!")
+                self.leaderboardManager.updateScore(
+                    forChallenge: challengeId,
+                    userId: userId,
+                    daysCompleted: newProgress,
+                    currentStreak: self.calculateCurrentStreak(progress: self.challenges.first(where: { $0.id == challengeId })?.userProgress[userId] ?? []),
+                    challengeDifficulty: self.challenges.first(where: { $0.id == challengeId })?.difficulty ?? "Medium"
+                )
             }
         }
-    
-    
+    }
     
     func loadUsers() {
-            firestoreService.fetchUsers { [weak self] result in
-                switch result {
-                case .success(let users):
-                    DispatchQueue.main.async {
-                        self?.users = users
-                    }
-                case .failure(let error):
-                    print("Error loading users: \(error.localizedDescription)")
+        firestoreService.fetchUsers { [weak self] result in
+            switch result {
+            case .success(let users):
+                DispatchQueue.main.async {
+                    self?.users = users
                 }
+            case .failure(let error):
+                print("Error loading users: \(error.localizedDescription)")
             }
         }
+    }
     
     private func loadCurrentUser() {
-           authManager.$currentUser
-               .compactMap { $0 }
-               .sink { [weak self] user in
-                   self?.currentUser = user
-                   print("DEBUG: Current user loaded: \(user.id ?? "unknown")")
-               }
-               .store(in: &cancellables)
-       }
+        authManager.$currentUser
+            .compactMap { $0 }
+            .sink { [weak self] user in
+                self?.currentUser = user
+                print("DEBUG: Current user loaded: \(user.id ?? "unknown")")
+            }
+            .store(in: &cancellables)
+    }
     
     func validateChallengeForToday(_ challengeId: String) {
            guard let userId = authManager.currentUser?.id else { return }
@@ -581,4 +609,132 @@ class ChallengeManager: ObservableObject {
            }
            return progress >= 1.0
        }
+    func fetchUsers() {
+          let db = Firestore.firestore()
+          db.collection("users").getDocuments { [weak self] (querySnapshot, error) in
+              guard let self = self else { return }
+              
+              if let error = error {
+                  print("Error getting users: \(error.localizedDescription)")
+                  return
+              }
+              
+              guard let documents = querySnapshot?.documents else {
+                  print("No users found")
+                  return
+              }
+              
+              self.users = documents.compactMap { document -> User? in
+                  do {
+                      var user = try document.data(as: User.self)
+                      user.id = document.documentID
+                      return user
+                  } catch {
+                      print("Error decoding user: \(error.localizedDescription)")
+                      return nil
+                  }
+              }
+              
+              print("Fetched \(self.users.count) users")
+          }
+      }
+   }
+extension ChallengeManager {
+    func updateChallengeProgress(for challengeId: String, userId: String, progress: Int) async throws {
+        let db = Firestore.firestore()
+        let progressRef = db.collection("challengeProgress")
+            .document(challengeId)
+            .collection("userProgress")
+            .document(userId)
+
+        try await progressRef.setData([
+            "todayProgress": progress,
+            "lastUpdated": Timestamp(date: Date())
+        ], merge: true)
+
+        print("Updated progress for challenge \(challengeId), user \(userId): \(progress)")
+    }
+   
+    func addActivity(username: String, description: String, iconName: String) {
+           let timestamp = Date()
+           let newActivity = ActivityItem(username: username, description: description, timestamp: timestamp, iconName: iconName)
+           
+           // Add to local array
+           recentActivities.insert(newActivity, at: 0)
+           if recentActivities.count > 20 {
+               recentActivities.removeLast()
+           }
+           
+           // Add to Firestore
+           db.collection("activities").addDocument(data: [
+               "username": username,
+               "description": description,
+               "timestamp": timestamp,
+               "iconName": iconName
+           ]) { error in
+               if let error = error {
+                   print("Error adding activity: \(error.localizedDescription)")
+               }
+           }
+       }
+       
+       func updateActivityTimes() {
+           let now = Date()
+           for (index, activity) in recentActivities.enumerated() {
+               let timeAgo = calculateTimeAgo(from: activity.timestamp, to: now)
+               recentActivities[index].timeAgo = timeAgo
+           }
+       }
+       
+       private func calculateTimeAgo(from date: Date, to now: Date) -> String {
+           let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date, to: now)
+           
+           if let year = components.year, year > 0 {
+               return year == 1 ? "1 year ago" : "\(year) years ago"
+           } else if let month = components.month, month > 0 {
+               return month == 1 ? "1 month ago" : "\(month) months ago"
+           } else if let day = components.day, day > 0 {
+               return day == 1 ? "1 day ago" : "\(day) days ago"
+           } else if let hour = components.hour, hour > 0 {
+               return hour == 1 ? "1 hour ago" : "\(hour) hours ago"
+           } else if let minute = components.minute, minute > 0 {
+               return minute == 1 ? "1 minute ago" : "\(minute) minutes ago"
+           } else {
+               return "Just now"
+           }
+       }
+       
+       func fetchRecentActivities() {
+           db.collection("activities")
+               .order(by: "timestamp", descending: true)
+               .limit(to: 20)
+               .getDocuments { [weak self] (querySnapshot, error) in
+                   guard let documents = querySnapshot?.documents else {
+                       print("Error fetching activities: \(error?.localizedDescription ?? "Unknown error")")
+                       return
+                   }
+                   
+                   self?.recentActivities = documents.compactMap { document -> ActivityItem? in
+                       let data = document.data()
+                       guard let username = data["username"] as? String,
+                             let description = data["description"] as? String,
+                             let timestamp = (data["timestamp"] as? Timestamp)?.dateValue(),
+                             let iconName = data["iconName"] as? String else {
+                           return nil
+                       }
+                       return ActivityItem(username: username, description: description, timestamp: timestamp, iconName: iconName)
+                   }
+                   
+                   self?.updateActivityTimes()
+               }
+       }
+   }
+
+   struct ActivityItem: Identifiable {
+       let id = UUID()
+       let username: String
+       let description: String
+       var timestamp: Date
+       var timeAgo: String = ""
+       let iconName: String
    }

@@ -1,3 +1,11 @@
+//
+//  UserProfileView.swift
+//  Embrk
+//
+//  Created by Ty Mitchell on 9/12/24.
+//
+
+
 import SwiftUI
 
 struct UserProfileView: View {
@@ -15,6 +23,7 @@ struct UserProfileView: View {
                 selectedChallengesView
             }
             .padding()
+            .padding(.bottom, 100)
         }
         .background(backgroundColor.edgesIgnoringSafeArea(.all))
         .navigationTitle(user.username)
@@ -36,9 +45,9 @@ struct UserProfileView: View {
                 .font(AppFonts.title2)
                 .foregroundColor(AppColors.text)
             
-            Text(user.email)
-                .font(AppFonts.subheadline)
-                .foregroundColor(AppColors.lightText)
+//            Text(user.email)
+//                .font(AppFonts.subheadline)
+//                .foregroundColor(AppColors.lightText)
         }
     }
     

@@ -71,29 +71,34 @@ class AuthManager: ObservableObject {
     }
 
     private func fetchUserData(userId: String, completion: @escaping (Result<User, Error>) -> Void) {
-        db.collection("users").document(userId).getDocument { (document, error) in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            if let document = document, document.exists {
-                do {
-                    var user = try document.data(as: User.self)
-                    user.id = userId
-                    completion(.success(user))
-                } catch {
+            db.collection("users").document(userId).getDocument { [weak self] (document, error) in
+                if let error = error {
+                    print("Error fetching user data: \(error.localizedDescription)")
                     completion(.failure(error))
+                    return
                 }
-            } else {
-                completion(.failure(NSError(domain: "AuthManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "User document not found"])))
+                
+                if let document = document, document.exists {
+                    do {
+                        var user = try document.data(as: User.self)
+                        user.id = userId
+                        self?.currentUser = user
+                        print("DEBUG: User loaded - Username: \(user.username), IsAdmin: \(user.isAdmin)")
+                        completion(.success(user))
+                    } catch {
+                        print("Error decoding user data: \(error.localizedDescription)")
+                        completion(.failure(error))
+                    }
+                } else {
+                    print("User document not found")
+                    completion(.failure(NSError(domain: "AuthManager", code: 404, userInfo: [NSLocalizedDescriptionKey: "User document not found"])))
+                }
             }
         }
-    }
-
+    
     private func createUserDocument(userId: String, email: String, username: String, completion: @escaping (Result<User, Error>) -> Void) {
         print("Creating new user document for User ID: \(userId)")
-        let newUser = User(username: username, email: email)
+        let newUser = User(username: username, email: email, isAdmin: false) // Set isAdmin to false by default
         let userRef = db.collection("users").document(userId)
 
         do {
@@ -115,7 +120,20 @@ class AuthManager: ObservableObject {
             completion(.failure(error))
         }
     }
-
+    
+    func makeUserAdmin(userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        db.collection("users").document(userId).updateData(["isAdmin": true]) { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                if userId == self.currentUser?.id {
+                    self.currentUser?.isAdmin = true
+                }
+                completion(.success(()))
+            }
+        }
+    }
+    
     func signOut(completion: @escaping (Result<Void, Error>) -> Void) {
         do {
             try Auth.auth().signOut()
@@ -131,6 +149,21 @@ class AuthManager: ObservableObject {
     deinit {
         if let handle = authStateDidChangeListenerHandle {
             Auth.auth().removeStateDidChangeListener(handle)
+        }
+    }
+    
+    func makeCurrentUserAdmin() async throws {
+        guard let userId = currentUser?.id else {
+            throw NSError(domain: "AuthManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "No current user"])
+        }
+        
+        do {
+            try await db.collection("users").document(userId).updateData(["isAdmin": true])
+            currentUser?.isAdmin = true
+            print("User successfully updated to admin")
+        } catch {
+            print("Error updating user to admin: \(error.localizedDescription)")
+            throw error
         }
     }
 }

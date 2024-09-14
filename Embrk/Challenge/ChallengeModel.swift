@@ -25,36 +25,45 @@ struct Challenge: Identifiable, Codable, Equatable {
     let challengeType: ChallengeType
     let healthKitMetric: HealthKitMetric?
     let verificationGoal: Double?
-    let startDate: Date
+    var startDate: Date
     let educationType: EducationType?
     let unitOfMeasurement: String?
     let dailyGoal: Int?
     let lifestyleType: LifestyleType?
-    let verificationMethod: VerificationMethod
+    let verificationMethod: VerificationMethod?
     
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, difficulty, maxParticipants, participatingUsers, isOfficial, durationInDays, userProgress, creatorId, challengeType, healthKitMetric, verificationGoal, startDate, educationType, unitOfMeasurement, dailyGoal, lifestyleType, verificationMethod
     }
 
-    enum EducationType: String, Codable, CaseIterable {
-        case reading = "Reading"
-        case studying = "Studying"
-        case languageLearning = "Language Learning"
-        case other = "Other"
-    }
+    enum VerificationMethod: String, Codable, CaseIterable, CustomStringConvertible {
+            case manual = "Manual"
+            case photo = "Photo"
+            case geolocation = "Geolocation"
+            case timeBased = "Time Based"
+            
+            var description: String { return rawValue }
+        }
+    
+    enum EducationType: String, Codable, CaseIterable, CustomStringConvertible {
+            case reading = "Reading"
+            case studying = "Studying"
+            case languageLearning = "Language Learning"
+            case other = "Other"
+            
+            var description: String { return rawValue }
+        }
 
-    enum LifestyleType: String, Codable, CaseIterable {
-        case meditation = "Meditation"
-        case sleep = "Sleep"
-        case waterIntake = "Water Intake"
-        case other = "Other"
-    }
-
-    enum VerificationMethod: String, Codable, CaseIterable {
-        case healthKit = "HealthKit"
-        case manual = "Manual"
-    }
+    enum LifestyleType: String, Codable, CaseIterable, CustomStringConvertible {
+           case meditation = "Meditation"
+           case sleep = "Sleep"
+           case waterIntake = "Water Intake"
+           case other = "Other"
+           
+           var description: String { return rawValue }
+       }
+    
     
     var currentParticipants: Int {
         participatingUsers.count
@@ -92,26 +101,12 @@ enum ChallengeType: String, Codable, CaseIterable {
     case miscellaneous = "Miscellaneous"
     case lifestyle = "Lifestyle"
 }
-
-enum HealthKitMetric: String, Codable, CaseIterable {
+enum HealthKitMetric: String, Codable, CaseIterable, CustomStringConvertible {
     case steps = "Steps"
     case heartRate = "Heart Rate"
     case activeEnergy = "Active Energy"
     case distance = "Distance"
     case workoutTime = "Workout Time"
     
-    var healthKitQuantityType: HKQuantityType? {
-        switch self {
-        case .steps:
-            return HKObjectType.quantityType(forIdentifier: .stepCount)
-        case .heartRate:
-            return HKObjectType.quantityType(forIdentifier: .heartRate)
-        case .activeEnergy:
-            return HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)
-        case .distance:
-            return HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)
-        case .workoutTime:
-            return HKObjectType.quantityType(forIdentifier: .appleExerciseTime)
-        }
-    }
+    var description: String { return rawValue }
 }

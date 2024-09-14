@@ -28,8 +28,9 @@ struct ProfileView: View {
                         achievementsSection
                     }
                     .padding()
+                    .padding(.bottom, 100)
                 }
-                .padding(.bottom, 100)
+                
             }
             .navigationTitle("Profile")
             .navigationBarItems(trailing: settingsButton)
