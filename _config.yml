@@ -11,7 +11,7 @@ presskit_download_link                    :                                     
                                                                                       # Or upload your press kit file to assets and set path accordingly (e.g. "assets/your_press_kit.zip").
 
 app_icon                                  : # assets/appicon.png                      # Automatically populates if not set and if iOS app ID is set.  Otherwise enter path to icon file manually.
-app_name                                  :Embrk                                           # Automatically populates if not set and if iOS app ID is set.  Otherwise enter manually.
+app_name                                  : Embrk                                           # Automatically populates if not set and if iOS app ID is set.  Otherwise enter manually.
 app_price                                 :                                           # Automatically populates if not set and if iOS app ID is set.  Otherwise enter manually.
 app_description                           : Challenge Yourself, Achieve More, Embrk on Greatness
 
@@ -40,9 +40,9 @@ features                                  :
     description                           : Easily create your own challenges or join community-driven ones to achieve your fitness and lifestyle goals.
     fontawesome_icon_name                 : trophy
     
-  - title                                 : iPhone Device Preview
-    description                           : Preview your app in the context of an iPhone device. Five different device colors included.
-    fontawesome_icon_name                 : mobile
+  - title                                 : HealthKit Integration 
+    description                           : Automatically track your progress using Apple HealthKit data, including steps, active energy, and more.
+    fontawesome_icon_name                 : heartbeat
 
   - title                                 : Video Support
     description                           : Preview app video on the iPhone device simply by placing your video files in the videos folder.
