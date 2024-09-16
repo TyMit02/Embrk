@@ -11,7 +11,7 @@ presskit_download_link                    :                                     
                                                                                       # Or upload your press kit file to assets and set path accordingly (e.g. "assets/your_press_kit.zip").
 
 app_icon                                  : # assets/appicon.png                      # Automatically populates if not set and if iOS app ID is set.  Otherwise enter path to icon file manually.
-app_name                                  : Embrk                                           # Automatically populates if not set and if iOS app ID is set.  Otherwise enter manually.
+app_name                                  :Embrk                                           # Automatically populates if not set and if iOS app ID is set.  Otherwise enter manually.
 app_price                                 :                                           # Automatically populates if not set and if iOS app ID is set.  Otherwise enter manually.
 app_description                           : Challenge Yourself, Achieve More, Embrk on Greatness
 
@@ -36,46 +36,46 @@ mastodon_link                             :
 # Feature List                            Edit, add or remove features to be presented.
 features                                  :
 
-  features:
   - title                                 : Create and Join Challenges
     description                           : Easily create your own challenges or join community-driven ones to achieve your fitness and lifestyle goals.
     fontawesome_icon_name                 : trophy
+    
+  - title                                 : iPhone Device Preview
+    description                           : Preview your app in the context of an iPhone device. Five different device colors included.
+    fontawesome_icon_name                 : mobile
 
-  - title                                 : HealthKit Integration
-    description                           : Automatically track your progress using Apple HealthKit data, including steps, active energy, and more.
-    fontawesome_icon_name                 : heartbeat
+  - title                                 : Video Support
+    description                           : Preview app video on the iPhone device simply by placing your video files in the videos folder.
+    fontawesome_icon_name                 : play-circle
 
-  - title                                 : Social Motivation
-    description                           : Connect with friends, share achievements, and compete on leaderboards to stay motivated.
-    fontawesome_icon_name                 : users
+  - title                                 : Automatic Icon and Metadata
+    description                           : Enter iOS app ID in the _config.yml file to automatically fetch app icon, price and App Store Link.
+    fontawesome_icon_name                 : sync
 
-  - title                                 : Diverse Challenge Types
-    description                           : Choose from fitness, education, lifestyle, and miscellaneous challenges to improve various aspects of your life.
-    fontawesome_icon_name                 : layer-group
+  - title                                 : Easy to Tweak
+    description                           : Tweak accent color, images, icons and transparency via the _config.yml file. No HTML/CSS needed.
+    fontawesome_icon_name                 : adjust
+  
+  - title                                 : Feature List
+    description                           : Add features (like this one) to your site via the _config.yml file. No HTML/CSS needed.
+    fontawesome_icon_name                 : star
 
-  - title                                 : Progress Tracking
-    description                           : Visualize your progress with intuitive charts and statistics for each challenge you participate in.
-    fontawesome_icon_name                 : chart-line
+  - title                                 : Smart App Banner
+    description                           : Display a smart app banner on iOS devices.
+    fontawesome_icon_name                 : arrow-alt-circle-down
 
-  - title                                 : Customizable Goals
-    description                           : Set personalized goals for each challenge, tailored to your individual needs and abilities.
-    fontawesome_icon_name                 : bullseye
+  - title                                 : Social Links
+    description                           : Easily add social media accounts and contact info in the footer via the _config.yml file. No HTML/CSS needed.
+    fontawesome_icon_name                 : link
 
-  - title                                 : Daily Verification
-    description                           : Easily verify your daily progress through various methods, including manual input and automatic HealthKit data.
-    fontawesome_icon_name                 : check-circle
+  - title                                 : FontAwesome Support
+    description                           : Pick custom Font Awesome icons for the feature list via the _config.yml file. No HTML/CSS needed.
+    fontawesome_icon_name                 : info-circle
 
-  - title                                 : Achievement System
-    description                           : Earn badges and rewards as you complete challenges and reach milestones.
-    fontawesome_icon_name                 : medal
+  - title                                 : # New Feature Title
+    description                           : # New Feature Description
+    fontawesome_icon_name                 : # Enter Font Awesome icon name (e.g. star). Find icons on fontawesome.com/icons.
 
-  - title                                 : Community Challenges
-    description                           : Participate in official app-wide challenges or create your own community challenges.
-    fontawesome_icon_name                 : globe
-
-  - title                                 : Privacy Controls
-    description                           : Manage your privacy settings and control what information you share with other users.
-    fontawesome_icon_name                 : user-shield
 
 
 # Theme Settings
