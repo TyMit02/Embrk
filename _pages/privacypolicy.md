@@ -58,6 +58,16 @@ You have the right to:
 - Access, correct, or delete your personal information.
 - Opt-out of certain data collection or uses.
 - Control your HealthKit data sharing preferences through your device settings.
+- Delete your account and associated data
+
+
+### 6.1 Account Deletion
+- You can delete your account at any time through the app's profile settings. When you delete your account:
+- All personal information associated with your account will be permanently deleted from our active databases.
+- Your user-generated content (such as created challenges) will be anonymized or deleted, depending on its nature and relevance to other users.
+- We may retain certain information in our backup systems for a limited period, but this information is not accessible in the normal course of business.
+- Some information may be retained if required by law or for legitimate business purposes, such as analytics or fraud prevention.
+- Please note that account deletion is irreversible. If you wish to use Embrk again after account deletion, you will need to create a new account.
 
 <br>
 
