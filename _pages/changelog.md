@@ -5,30 +5,41 @@ include_in_header: true
 ---
 
 # Changelog
-Here you can keep a changelog for your app. Edit the markdown based CHANGELOG.md which is located in the _pages directory. The changelog below is simply an example changelog that serves to exemplify how the markdown can be used. You can be as creative as you want with the markdown.
+Keep track of Embrk's evolution and improvements here. We're constantly working to enhance your challenge experience!
 
 <br>
 
 ### `Latest`
-# **Version 2.0**
-This is the first update to our app. Jeez **goodness** by kept more sensually a much far proper exotically precise [here is a link](https://www.google.com) and and illicit hey uninspiring the more sat honey knelt before before bearish bowed lorikeet wolf grandly instead diligently and rhinoceros imperative.
+# **Version 1.2.0**
+We're excited to bring you new features to supercharge your challenge journey!
 
 #### What's New
-- Much far proper exotically precise unaccountable.
-- [Changes to Privacy Policy](/privacypolicy)
+- **Friend System**: Connect with friends, share achievements, and motivate each other.
+- **Enhanced HealthKit Integration**: More accurate tracking for fitness challenges.
+- **Custom Challenge Creator**: Design your perfect challenge with our new, flexible creation tool.
+- [Updated Privacy Policy](/privacypolicy) to reflect new features.
+
+#### Improvements
+- Smoother UI transitions for a more fluid app experience.
+- Optimized challenge join process for quicker participation.
 
 #### Bug Fixes
-- Much far proper exotically precise unaccountable.
-- [Changes to Privacy Policy](/privacypolicy)
+- Fixed an issue where some users couldn't see their challenge progress.
+- Resolved occasional crashes when viewing leaderboards.
 
 <br>
 
-### **Version 2.1**
-Abnormal and formidable against much the before well improper more spent far heron amicably iguana plainly swanky upon mammoth **much paid darn some tapir** some glared save crud more regarding one accommodating gosh cannily and on hungry a more goodness inside merry yikes wedded versus because some a a a shined anteater goldfinch jeez up so and this this a.
+### **Version 1.1.0**
+Bringing community closer with new social features!
 
 #### What's New
-- Much far proper exotically precise unaccountable.
-- Much far proper exotically precise unaccountable.
+- **Community Challenges**: Join app-wide challenges and compete globally.
+- **Challenge Sharing**: Easily share your favorite challenges with friends.
+- **Progress Insights**: New graphs and stats to visualize your growth.
+
+#### Improvements
+- Refined user profile page for better achievement showcasing.
+- Enhanced notification system for challenge reminders.
 
 <br>
 
@@ -36,30 +47,16 @@ ________
 <br>
 
 ### `Initial Release`
-# **Version 1.0**
-Cracked a more and iguana a without some echidna a abnormal hello and beat thanks jeepers gnu jeepers until up depending for drooled awfully angelfish relentless much a well wasp some in impala darn and overate greedily wow kookaburra beneath much wistful fluid until and lemming less armadillo redoubtable after much capybara wow that hence interbred timorous loosely oh divisively wherever because jeepers until since as that goodness roadrunner insanely belated physic jeepers hey jeepers much the beside steadfastly up toward indubitably this goodness playful.
+# **Version 1.0.0**
+Welcome to Embrk - Your Journey to Better!
 
-<br>
+#### Features
+- Create and join diverse challenges: fitness, education, lifestyle, and more.
+- HealthKit integration for automatic progress tracking in fitness challenges.
+- Daily verification system to keep you accountable.
+- Leaderboards to fuel friendly competition.
+- Achievement system to celebrate your milestones.
 
-## **Version 1.1**
-Abnormal and formidable against much the before well improper more spent far heron amicably iguana plainly swanky upon mammoth **much paid darn some tapir** some glared save crud more regarding one accommodating gosh cannily and on hungry a more goodness inside merry yikes wedded versus because some a a a shined anteater goldfinch jeez up so and this this a.
-
-#### What's New
-- Much far proper exotically precise unaccountable.
-- Much far proper exotically precise unaccountable.
-
-<br>
-
-## Version 1.0.1
-That wow robin one and gosh audibly darn that variously less across softly awakened under affectingly wildebeest from jeepers far contemplated and indisputably clung jeepers much mistaken some after mumbled hey certain neatly far alas more trod the swelled rolled permissively so save pert the tapir paradoxical off so then juggled crud a however overslept vehemently kept indisputably anteater walked alas or into.
-
-#### What's New
-- Much far proper exotically precise unaccountable.
-- Much far proper exotically precise unaccountable.
-- Much far proper exotically precise unaccountable.
-
-#### Bug Fixes
-- Improved user sign up experience.
-- Unlike deliberately zebra hen oh jeez understandable. Alas and quit oh snooty unlike deliberately.
+We're thrilled to start this journey with you. Your feedback is crucial in shaping Embrk's future. Let's embark on this adventure together!
 
 <br>
