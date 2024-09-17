@@ -44,7 +44,7 @@ features                                  :
     description                           : Automatically track your progress using Apple HealthKit data, including steps, active energy, and more.
     fontawesome_icon_name                 : heartbeat
 
-  - title                                 : Social Motivation(Coming Soon)
+  - title                                 : Social Motivation
     description                           : Connect with friends, share achievements, and compete on leaderboards to stay motivated.
     fontawesome_icon_name                 : users
 
@@ -65,9 +65,6 @@ features                                  :
     description                           : Easily verify your daily progress through various methods, including manual input and automatic HealthKit data.
     fontawesome_icon_name                 : check-circle
 
-  - title                                 : Achievement System(Coming Soon)
-    description                           : Earn badges and rewards as you complete challenges and reach milestones.
-    fontawesome_icon_name                 : info-circle
 
   - title                                 : Community Challenges
     description                           : Participate in official app-wide challenges or create your own community challenges.
